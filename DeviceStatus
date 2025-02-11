@@ -1,0 +1,124 @@
+import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { ShareDialog } from 'components/ShareDialog';
+import { ConnectionStatus, ConnectionState } from 'components/ConnectionStatus';
+import { BirdLogo } from 'components/BirdLogo';
+import { ActionButton } from 'components/ActionButton';
+import { IoAnalytics, IoShareSocial } from 'react-icons/io5';
+import { formatDeviceData } from 'utils/sharing';
+
+export default function DeviceStatus() {
+  const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
+  const [deviceName, setDeviceName] = useState<string>();
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+
+  // Simulate connection attempt when page loads
+  useEffect(() => {
+    const attemptConnection = () => {
+      setConnectionState('connecting');
+      
+      // Simulate connection process
+      setTimeout(() => {
+        // Randomly succeed or fail for demo
+        if (Math.random() > 0.3) {
+          setConnectionState('connected');
+          setDeviceName('SigmaDevice-01');
+        } else {
+          setConnectionState('error');
+        }
+      }, 2000);
+    };
+
+    attemptConnection();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-800 to-blue-900 
+                    bg-gradient-animate flex flex-col items-center p-4">
+      {/* Header with logo */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center mb-8 mt-4"
+      >
+        <BirdLogo className="w-8 h-8 text-white mr-2" />
+        <h1 className="text-2xl font-bold text-white">SigmaPatch</h1>
+      </motion.div>
+
+      {/* Connection status */}
+      <ConnectionStatus
+        state={connectionState}
+        deviceName={deviceName}
+        className="w-full max-w-md mb-8"
+        onRetry={() => setConnectionState('connecting')}
+      />
+
+      {/* Main content area */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="w-full max-w-md"
+      >
+        {connectionState === 'connected' ? (
+          <div className="space-y-4">
+            <ActionButton
+              variant="primary"
+              icon={<IoAnalytics />}
+              disabled
+              onClick={() => {}}
+              className="mb-4"
+            >
+              Analysis
+            </ActionButton>
+
+            {/* Share Dialog */}
+            <ShareDialog
+              isOpen={isShareDialogOpen}
+              onClose={() => setIsShareDialogOpen(false)}
+              deviceData={{
+                deviceName: deviceName  'Unknown Device',
+                status: 'Connected',
+                timestamp: new Date().toLocaleString(),
+                url: window.location.href
+              }}
+            />
+            <ActionButton
+              variant="secondary"
+              icon={<IoShareSocial />}
+              onClick={async () => {
+                const deviceData = {
+                  deviceName: deviceName  'Unknown Device',
+                  status: 'Connected',
+                  timestamp: new Date().toLocaleString(),
+                  url: window.location.href
+                };
+if (navigator.share) {
+                  try {
+                    const { title, text, url } = formatDeviceData(deviceData);
+                    await navigator.share({ title, text, url });
+                  } catch (error) {
+                    console.error('Error sharing:', error);
+                    setIsShareDialogOpen(true);
+                  }
+                } else {
+                  setIsShareDialogOpen(true);
+                }
+              }}
+            >
+              Share
+            </ActionButton>
+          </div>
+        ) : (
+          <div className="text-center text-gray-400">
+            {connectionState === 'connecting' ? (
+              <p>Detecting device...</p>
+            ) : (
+              <p>Please connect your device to continue</p>
+            )}
+          </div>
+        )}
+      </motion.div>
+    </div>
+  );
+}
